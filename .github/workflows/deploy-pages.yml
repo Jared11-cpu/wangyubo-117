@@ -1,0 +1,27 @@
+name: Publish class site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download static site bundle
+        run: |
+          curl -L --fail --retry 5 --retry-delay 3 -o site.zip "https://introductory-while-rays-sheffield.trycloudflare.com/site.zip"
+          mkdir site
+          unzip -q site.zip -d site
+          touch site/.nojekyll
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
