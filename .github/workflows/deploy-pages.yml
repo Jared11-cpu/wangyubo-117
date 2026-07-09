@@ -12,12 +12,25 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Download static site bundle
+      - name: Download and extract static site bundle
         run: |
           curl -L --fail --retry 5 --retry-delay 3 -o site.zip "https://introductory-while-rays-sheffield.trycloudflare.com/site.zip"
-          mkdir site
-          unzip -q site.zip -d site
-          touch site/.nojekyll
+          python3 - <<'PY'
+          import pathlib
+          import zipfile
+
+          out = pathlib.Path("site")
+          out.mkdir(exist_ok=True)
+          with zipfile.ZipFile("site.zip") as archive:
+              for info in archive.infolist():
+                  name = info.filename.replace("\\", "/").strip("/")
+                  if not name or name.endswith("/") or name == "site.zip":
+                      continue
+                  target = out / name
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(archive.read(info))
+          (out / ".nojekyll").write_text("", encoding="utf-8")
+          PY
       - name: Publish to gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
         with:
